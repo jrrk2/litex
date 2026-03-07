@@ -6,6 +6,9 @@ ifdef TFTP_SERVER_PORT
 CFLAGS += -DTFTP_SERVER_PORT=$(TFTP_SERVER_PORT)
 endif
 
+# Allow .incbin in stub_data.S to find stub.bin and rv32.dtb in the BIOS source dir
+CFLAGS += -Wa,-I$(BIOS_DIRECTORY)
+
 OBJECTS = boot-helper.o	\
 	  boot.o			\
 	  helpers.o			\
@@ -19,6 +22,7 @@ OBJECTS = boot-helper.o	\
 	  cmd_litesdcard.o  \
 	  cmd_litesata.o    \
 	  sim_debug.o		\
+	  stub_data.o		\
 	  main.o            \
 	  crt0.o
 

@@ -145,7 +145,7 @@ class VexRiscvSMP(CPU):
     # Arch.
     @staticmethod
     def get_arch():
-        arch = "rv32i2p0_ma"
+        arch = "rv32ima_zicsr_zifencei"
         if VexRiscvSMP.with_fpu:
             arch += "fd"
         if VexRiscvSMP.with_rvc:

@@ -53,8 +53,23 @@
 #include <liblitesata/sata.h>
 
 #ifndef CONFIG_BIOS_NO_BOOT
+
+extern uint8_t _stub_bin_start[];
+
 static void boot_sequence(void)
 {
+#ifdef CSR_SWITCHES_BASE
+	/* Read SELSW[2:0] — active-low, invert to get active-high */
+	uint8_t selsw = (~switches_in_read()) & 0x7;
+
+	if (selsw & 0x3) {
+		/* Any XIP switch set: jump to stub in ROM, it handles the rest */
+		printf("SELSW=0x%x: XIP boot via ROM stub...\n", selsw);
+		boot(0, 0, 0, (unsigned long)_stub_bin_start);
+	}
+	/* No XIP switch: fall through to SD card boot */
+#endif
+
 #ifdef CSR_UART_BASE
 	if (serialboot() == 0)
 		return;

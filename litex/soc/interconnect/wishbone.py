@@ -740,7 +740,7 @@ class Cache(LiteXModule):
 
         # Tag memory.
         # -----------
-        tag_layout = [("tag", tagbits), ("dirty", 1)]
+        tag_layout = [("tag", tagbits), ("dirty", 1), ("valid", 1)]
         tag_mem    = Memory(layout_len(tag_layout), 2**linebits)
         tag_port   = tag_mem.get_port(write_capable=True)
         self.specials += tag_mem, tag_port
@@ -753,7 +753,8 @@ class Cache(LiteXModule):
 
         self.comb += [
             tag_port.adr.eq(adr_line),
-            tag_di.tag.eq(adr_tag)
+            tag_di.tag.eq(adr_tag),
+            tag_di.valid.eq(1),
         ]
         if word is not None:
             self.comb += slave.adr.eq(Cat(word, adr_line, tag_do.tag))
@@ -790,15 +791,16 @@ class Cache(LiteXModule):
         )
         fsm.act("TEST_HIT",
             word_clr.eq(1),
-            If(tag_do.tag == adr_tag,
+            If(tag_do.valid & (tag_do.tag == adr_tag),
                 master.ack.eq(1),
                 If(master.we,
                     tag_di.dirty.eq(1),
+                    tag_di.valid.eq(1),
                     tag_port.we.eq(1)
                 ),
                 NextState("IDLE")
             ).Else(
-                If(tag_do.dirty,
+                If(tag_do.valid & tag_do.dirty,
                     NextState("EVICT")
                 ).Else(
                     # Write the tag first to set the slave address
