@@ -23,6 +23,7 @@ OBJECTS = boot-helper.o	\
 	  cmd_litesata.o    \
 	  sim_debug.o		\
 	  stub_data.o		\
+	  spieth_boot.o		\
 	  main.o            \
 	  crt0.o
 

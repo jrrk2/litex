@@ -19,5 +19,6 @@ void flashboot(void);
 void romboot(void);
 void sdcardboot(void);
 void sataboot(void);
+void spieth_tftp_boot(void);
 
 #endif /* __BOOT_H */

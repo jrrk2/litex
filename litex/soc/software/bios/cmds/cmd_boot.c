@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include <generated/csr.h>
+#include <generated/soc.h>
 
 #include "../command.h"
 #include "../helpers.h"
@@ -135,4 +136,34 @@ define_command(sdcardboot, sdcardboot, "Boot from SDCard", BOOT_CMDS);
 #if defined(CSR_SATA_SECTOR2MEM_BASE)
 define_command(sataboot, sataboot, "Boot from SATA", BOOT_CMDS);
 #endif
+
+/**
+ * Command "tftpboot"
+ *
+ * Boot software via SPI Ethernet (DHCP + TFTP)
+ *
+ */
+#ifdef SPIETH_BASE
+static void tftpboot_handler(int nb_params, char **params)
+{
+	spieth_tftp_boot();
+	printf("TFTP boot failed\n");
+}
+define_command(tftpboot, tftpboot_handler, "Boot via SPI Ethernet (TFTP)", BOOT_CMDS);
+#endif
+
+/**
+ * Command "xipboot"
+ *
+ * Boot via XIP ROM stub
+ *
+ */
+extern uint8_t _stub_bin_start[];
+
+static void xipboot_handler(int nb_params, char **params)
+{
+	printf("XIP boot via ROM stub...\n");
+	boot(0, 0, 0, (unsigned long)_stub_bin_start);
+}
+define_command(xipboot, xipboot_handler, "Boot via XIP ROM stub", BOOT_CMDS);
 

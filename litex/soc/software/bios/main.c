@@ -59,38 +59,25 @@ extern uint8_t _stub_bin_start[];
 static void boot_sequence(void)
 {
 #ifdef CSR_SWITCHES_BASE
-	/* Read SELSW[2:0] — active-low, invert to get active-high */
-	uint8_t selsw = (~switches_in_read()) & 0x7;
+	/* SELSW is a 3-position switch, one-hot active-low:
+	 *   Position 1: raw=0x5  → command line
+	 *   Position 2: raw=0x3  → TFTP boot
+	 *   Position 3: raw=0x6  → SD card / XIP boot
+	 */
+	uint8_t selsw = switches_in_read() & 0x7;
+	printf("SELSW: 0x%x\n", selsw);
 
-	if (selsw & 0x3) {
-		/* Any XIP switch set: jump to stub in ROM, it handles the rest */
-		printf("SELSW=0x%x: XIP boot via ROM stub...\n", selsw);
+	if (selsw == 3) {
+#ifdef SPIETH_BASE
+		printf("TFTP boot...\n");
+		spieth_tftp_boot();  /* does not return on success */
+		printf("TFTP boot failed\n");
+#endif
+	} else if (selsw == 6) {
+		printf("XIP boot via ROM stub...\n");
 		boot(0, 0, 0, (unsigned long)_stub_bin_start);
 	}
-	/* No XIP switch: fall through to SD card boot */
-#endif
-
-#ifdef CSR_UART_BASE
-	if (serialboot() == 0)
-		return;
-#endif
-#ifdef FLASH_BOOT_ADDRESS
-	flashboot();
-#endif
-#ifdef ROM_BOOT_ADDRESS
-	romboot();
-#endif
-#if defined(CSR_SPISDCARD_BASE) || defined(CSR_SDCARD_BASE)
-	sdcardboot();
-#endif
-#if defined(CSR_SATA_SECTOR2MEM_BASE)
-	sataboot();
-#endif
-#ifdef CSR_ETHMAC_BASE
-#ifdef CSR_ETHPHY_MODE_DETECTION_MODE_ADDR
-	eth_mode();
-#endif
-	netboot(0, NULL);
+	/* selsw == 5 (position 1) or other: fall through to console */
 #endif
 	printf("No boot medium found\n");
 }

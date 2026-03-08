@@ -144,7 +144,7 @@ define_command(mdio_dump, mdio_dump_handler, "Dump MDIO registers", LITEETH_CMDS
  * Set local ip
  *
  */
-#ifdef ETH_DYNAMIC_IP
+#if defined(ETH_DYNAMIC_IP) && defined(CSR_ETHMAC_BASE)
 static void eth_local_ip_handler(int nb_params, char **params)
 {
     if (nb_params < 1) {
@@ -163,7 +163,7 @@ define_command(eth_local_ip, eth_local_ip_handler, "Set the local ip address", L
  * Set remote ip.
  *
  */
-#ifdef ETH_DYNAMIC_IP
+#if defined(ETH_DYNAMIC_IP) && defined(CSR_ETHMAC_BASE)
 static void eth_remote_ip_handler(int nb_params, char **params)
 {
     if (nb_params < 1) {
@@ -182,7 +182,7 @@ define_command(eth_remote_ip, eth_remote_ip_handler, "Set the remote ip address"
  * Set mac address.
  *
  */
-#ifdef ETH_DYNAMIC_IP
+#if defined(ETH_DYNAMIC_IP) && defined(CSR_ETHMAC_BASE)
 static void eth_mac_addr_handler(int nb_params, char **params)
 {
     if (nb_params < 1) {
@@ -195,7 +195,7 @@ static void eth_mac_addr_handler(int nb_params, char **params)
 define_command(eth_mac_addr, eth_mac_addr_handler, "Set the mac address", LITEETH_CMDS);
 #endif
 
-#ifdef ETH_DYNAMIC_IP
+#if defined(ETH_DYNAMIC_IP) && defined(CSR_ETHMAC_BASE)
 static void eth_ping_handler(int nb_params, char **params)
 {
 	if (nb_params != 1) {
