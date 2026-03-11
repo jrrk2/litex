@@ -145,11 +145,12 @@ class VexRiscvSMP(CPU):
     # Arch.
     @staticmethod
     def get_arch():
-        arch = "rv32ima_zicsr_zifencei"
+        arch = "rv32ima"
         if VexRiscvSMP.with_fpu:
             arch += "fd"
         if VexRiscvSMP.with_rvc:
             arch += "c"
+        arch += "_zicsr_zifencei"
         return arch
 
     # Memory Mapping.
