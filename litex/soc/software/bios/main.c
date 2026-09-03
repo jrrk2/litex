@@ -201,7 +201,11 @@ __attribute__((__used__)) int main(int i, char **c)
 	printf(ANSI_BOLD "       / /  (_) /____ | |/_/" ANSI_RESET "\n");
 	printf(ANSI_BOLD "      / /__/ / __/ -_)>  <" ANSI_RESET "\n");
 	printf(ANSI_BOLD "     /____/_/\\__/\\__/_/|_|" ANSI_RESET "\n");
+#ifdef CONFIG_BIOS_BANNER_TAGLINE
+	printf(ANSI_BOLD "   " CONFIG_BIOS_BANNER_TAGLINE ANSI_RESET "\n");
+#else
 	printf(ANSI_BOLD "   Build your hardware, easily!" ANSI_RESET "\n");
+#endif
 	printf("\n");
 	printf(" (c) Copyright 2012-2026 Enjoy-Digital\n");
 	printf(" (c) Copyright 2007-2015 M-Labs\n");
