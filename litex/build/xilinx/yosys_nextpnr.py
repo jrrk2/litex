@@ -88,9 +88,10 @@ class XilinxYosysNextpnrToolchain(YosysNextPNRToolchain):
                 max_freq = freq
             if name is None:
                 name = clk_sig
-            xdc.append(
-                "create_clock -name {name} -period " + str(period) +
-                " [get_ports {clk}]".format(name=name, clk=clk_sig))
+            xdc.append("create_clock -name {name} -period {period} [get_ports {clk}]".format(
+                name   = name,
+                period = period,
+                clk    = clk_sig))
 
         # FIXME: NextPNRWrapper is constructed at finalize level, too early
         # to update self._pnr_opts. The solution is to update _nextpnr instance.
@@ -100,7 +101,7 @@ class XilinxYosysNextpnrToolchain(YosysNextPNRToolchain):
         self._clock_constraints = "\n".join(xdc)
 
     def build_io_constraints(self):
-        tools.write_to_file(self._build_name + ".xdc", _build_xdc(self.named_sc, self.named_pc) + self._clock_constraints)
+        tools.write_to_file(self._build_name + ".xdc", _build_xdc(self.named_sc, self.named_pc) + "\n" + self._clock_constraints)
         return (self._build_name + ".xdc", "XDC")
 
     def _fix_instance(self, instance):
