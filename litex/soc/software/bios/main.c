@@ -119,7 +119,13 @@ define_boot_method(sata, sata_boot_method, SATA_BOOT_PRIORITY);
 
 #if defined(CSR_ETHMAC_BASE) && !defined(NET_BOOT_DISABLE)
 #ifndef NET_BOOT_PRIORITY
-#define NET_BOOT_PRIORITY 50
+/* Network boot goes FIRST (lowest value runs first; serial is 0): with a
+ * TFTP server up the board boots unattended, and every other method is still
+ * tried if the netboot fails.  At the old 50 it came last, behind an SD boot
+ * that on a board whose card does not answer stalls in timeouts and never
+ * reaches the network without a hand at the console.  Build with
+ * -DNET_BOOT_PRIORITY=50 (or a SoC constant) for the old order. */
+#define NET_BOOT_PRIORITY -10
 #endif
 static int net_boot_method(void)
 {
