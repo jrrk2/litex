@@ -65,17 +65,39 @@ static inline uint32_t sdcard_block_to_addr(uint32_t block) {
 /* SDCard command helpers                                                */
 /*-----------------------------------------------------------------------*/
 
+/* Both event registers report completion AND timeout through the core: bit 0
+ * is "done", bit 2 is "timed out".  So a core that sees no bus activity at
+ * all sets neither, and a loop waiting on bit 0 never ends.  That is not
+ * hypothetical -- an SD input buffer that is never enabled (four IN_DIFF bits
+ * the open bitstream flow does not emit) looks exactly like it, and hangs the
+ * BIOS in sdcard boot, before it can fall through to network boot.
+ *
+ * Bound the waits in software as well.  A dead SD interface then costs one
+ * timeout and the next boot method runs.
+ */
+#ifndef SDCARD_EVENT_TIMEOUT_US
+#define SDCARD_EVENT_TIMEOUT_US 500000
+#endif
+
 int sdcard_wait_cmd_done(void) {
 	unsigned int event;
 #ifdef SDCARD_DEBUG
 	uint32_t r[SD_CMD_RESPONSE_SIZE/4];
 	printf("cmdevt: wait for event & 0x1\n");
 #endif
-	for (;;) {
-		event = sdcard_core_cmd_event_read();
-		busy_wait_us(10);
-		if (event & 0x1)
-			break;
+	{
+		unsigned int elapsed = 0;
+		for (;;) {
+			event = sdcard_core_cmd_event_read();
+			busy_wait_us(10);
+			if (event & 0x1)
+				break;
+			elapsed += 10;
+			if (elapsed >= SDCARD_EVENT_TIMEOUT_US) {
+				printf("sdcard: command event never completed\n");
+				return SD_TIMEOUT;
+			}
+		}
 	}
 #ifdef SDCARD_DEBUG
 	printf("cmdevt: %08x\n", event);
@@ -95,11 +117,19 @@ int sdcard_wait_data_done(void) {
 #ifdef SDCARD_DEBUG
 	printf("dataevt: wait for event & 0x1\n");
 #endif
-	for (;;) {
-		event = sdcard_core_data_event_read();
-		if (event & 0x1)
-			break;
-		busy_wait_us(10);
+	{
+		unsigned int elapsed = 0;
+		for (;;) {
+			event = sdcard_core_data_event_read();
+			if (event & 0x1)
+				break;
+			busy_wait_us(10);
+			elapsed += 10;
+			if (elapsed >= SDCARD_EVENT_TIMEOUT_US) {
+				printf("sdcard: data event never completed\n");
+				return SD_TIMEOUT;
+			}
+		}
 	}
 #ifdef SDCARD_DEBUG
 	printf("dataevt: %08x\n", event);

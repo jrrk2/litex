@@ -338,14 +338,39 @@ class XilinxDDRInputS7:
 # 7-Series SDROutput -------------------------------------------------------------------------------
 
 class XilinxSDROutputImplS7(Module):
+    """Register an output in the pad's OLOGIC, not in the fabric.
+
+    A plain FDCE leaves the placer free to put the register anywhere, and it
+    does: on a VC707 SD card build nextpnr placed the flip-flop driving
+    sdcard_clk at SLICE_X14Y48, forty rows from its pad, while the IDDRs
+    capturing the card's reply sat in the pad itself.  Clock and data then
+    leave by two independent fabric routes and the skew between them at the
+    pins is whatever the router happened to do.
+
+    That matters because the SD bus has a hold requirement in both directions.
+    The card samples CMD and DAT on the clock edge at ITS pins and needs the
+    data held after it; hold margin is measured from the edge and does not
+    grow when the clock is slowed, so an uncontrolled skew here fails at every
+    frequency alike.
+
+    An ODDR with both inputs tied to the same value is the same one-bit output
+    register, but it can only live in the OLOGIC beside the pad -- so
+    clock-to-out is fixed, and every signal driven this way leaves from its own
+    pad on the same global clock.  The skew that remains is IOB to IOB.
+    """
     def __init__(self, i, o, clk):
         for j in range(len(o)):
-            self.specials += Instance("FDCE",
-                i_C   = clk,
-                i_CE  = 1,
-                i_CLR = 0,
-                i_D   = i[j],
-                o_Q   = o[j]
+            self.specials += Instance("ODDR",
+                p_DDR_CLK_EDGE = "SAME_EDGE",
+                p_SRTYPE       = "SYNC",
+                p_INIT         = 0,
+                i_C  = clk,
+                i_CE = 1,
+                i_S  = 0,
+                i_R  = 0,
+                i_D1 = i[j],
+                i_D2 = i[j],
+                o_Q  = o[j]
             )
 
 

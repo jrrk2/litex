@@ -2621,11 +2621,19 @@ class LiteXSoC(SoC):
             dynamic_ip = True
 
         if dynamic_ip:
-            if local_ip is not None:
-                self.logger.error("Ethernet {} cannot be used with {}.".format(
-                    colorer("local_ip"), colorer("dynamic_ip", color="red")))
-                raise SoCError()
             self.add_constant("ETH_DYNAMIC_IP")
+            # Upstream refuses local_ip together with dynamic_ip.  Keep it
+            # instead, as the DHCP fallback: boot.c's dhcp_get_ip() already
+            # does the right thing when dhcp_resolve() returns -1 -- it calls
+            # net_init() with whatever local_ip[] holds -- but without
+            # LOCALIP* that array falls back to a literal 192.168.1.50
+            # compiled into boot.c, which is a guess about somebody else's
+            # network.  Emitting the constants makes the fallback the address
+            # the board was actually built for, so a DHCP server that is
+            # absent, slow or unhelpful costs a timeout rather than the boot.
+            if local_ip is not None:
+                self.logger.info("Ethernet {} kept as the {} fallback.".format(
+                    colorer("local_ip"), colorer("dynamic_ip", color="green")))
 
         if with_dhcp:
             self.add_constant("ETH_UDP_BROADCAST")
