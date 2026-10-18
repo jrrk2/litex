@@ -118,7 +118,7 @@ int sdcard_wait_data_done(void) {
 void sdcard_set_clk_freq(unsigned long clk_freq, int show) {
 	uint32_t divider;
 	divider = clk_freq ? DIV_ROUND_UP(CONFIG_CLOCK_FREQUENCY, clk_freq) : 256;
-	divider = min(max(divider, 2), 256);
+	divider = min(max(divider, 2), 511); /* The clocker's 9-bit divider: 400 kHz init above 102 MHz sys. */
 #ifdef SDCARD_DEBUG
 	show = 1;
 #endif
@@ -660,6 +660,8 @@ int sdcard_read(uint32_t block, uint32_t count, uint8_t* buf)
 {
 	int status;
 	unsigned int timeout;
+	uint8_t *buf0   = buf;   /* For the cache flush: the range the DMA wrote. */
+	uint32_t count0 = count;
 
 	while (count) {
 		uint32_t nblocks;
@@ -717,8 +719,14 @@ int sdcard_read(uint32_t block, uint32_t count, uint8_t* buf)
 	}
 
 #ifndef CONFIG_CPU_HAS_DMA_BUS
-	/* Flush caches */
+	/* Flush caches: the DMA'd range only (a whole flush is a CBO per line of all of main_ram
+	 * on Zicbom CPUs: ~0.1 s per call on a 256 MB VexiiRiscv SoC). */
+#ifdef HAS_FLUSH_CPU_DCACHE_RANGE
+	flush_cpu_dcache_range(buf0, (size_t)count0*512);
+#else
+	(void)buf0; (void)count0;
 	flush_cpu_dcache();
+#endif
 	flush_l2_cache();
 #endif
 
