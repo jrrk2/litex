@@ -685,7 +685,13 @@ void udp_set_broadcast_callback(udp_callback callback)
 
 static void process_frame(void)
 {
+	/* Only the received frame's slot: a whole-cache flush is a CBO per line of all of main_ram
+	 * on Zicbom CPUs (VexiiRiscv: 256 MB = 4M lines, ~0.1 s per frame). */
+#ifdef HAS_FLUSH_CPU_DCACHE_RANGE
+	flush_cpu_dcache_range((void *)rxbuffer, rxlen);
+#else
 	flush_cpu_dcache();
+#endif
 
 	if(rxlen < (sizeof(struct ethernet_header) + ETH_TX_CRC_SIZE)) return;
 	if(rxlen > ETHMAC_SLOT_SIZE) return;
