@@ -97,6 +97,20 @@ define_command(romboot, romboot, "Boot from ROM", BOOT_CMDS);
 #endif
 
 /**
+ * Command "romtest"
+ *
+ * Run the ROM's test program (at ROM_TEST_ADDRESS)
+ *
+ */
+#ifdef ROM_TEST_ADDRESS
+static void romtest(int nb_params, char **params)
+{
+	boot(0, 0, 0, ROM_TEST_ADDRESS);
+}
+define_command(romtest, romtest, "Test the ROM and DDR", BOOT_CMDS);
+#endif
+
+/**
  * Command "serialboot"
  *
  * Boot software from serial interface

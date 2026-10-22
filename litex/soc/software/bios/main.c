@@ -87,6 +87,22 @@ define_boot_method(flash, flash_boot_method, FLASH_BOOT_PRIORITY);
 #endif
 static int rom_boot_method(void)
 {
+#ifdef ROM_BOOT_TIMEOUT
+	/* With a timeout (seconds), ESC stops here at the console, where
+	 * "romboot" starts the ROM boot by hand. */
+	printf("Booting from ROM in %d s, press ESC for the BIOS console...\n", ROM_BOOT_TIMEOUT);
+	for (int i = 0; i < ROM_BOOT_TIMEOUT * 100; i++) {
+		if (readchar_nonblock() && readchar() == ESC) {
+#ifdef ROM_TEST_ADDRESS
+			printf("ROM boot stopped; \"romboot\" to resume, \"romtest\" to test.\n");
+#else
+			printf("ROM boot stopped; \"romboot\" to resume.\n");
+#endif
+			return BOOT_METHOD_STOP;
+		}
+		busy_wait(10);
+	}
+#endif
 	romboot();
 	return BOOT_METHOD_CONTINUE;
 }
